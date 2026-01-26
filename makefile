@@ -5,7 +5,7 @@ OBJECTS := ${VM_OBJECTS} ${MAIN_OBJECT}
 
 
 out: ${OBJECTS}
-	gcc ${OBJECTS} -o out
+	gcc ${OBJECTS} -o prog.out
 
 ${OBJECTS}: %.o: %.c
 	gcc -c $^ -o $@ -Wall
@@ -13,4 +13,4 @@ ${OBJECTS}: %.o: %.c
 clean:
 	rm -f ${VM_OBJECTS}
 	rm -f ${MAIN_OBJECT}
-	rm -f out
+	rm -f prog.out

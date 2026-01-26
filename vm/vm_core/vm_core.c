@@ -4,17 +4,17 @@
 #include "../verify/verify.h"
 
 
-HaltReason vm_run(VMState* state, const VMInput* io){
+HaltReason vm_run(VMState* state){
     uint8_t overflow_flag = 0;
 
-    if (io->input_len > MAX_INPUT_CELLS){
-        printf("number of inputs exceeds maximum number of allowed input cells: (%zu>%d)\n", io->input_len, MAX_INPUT_CELLS);
+    if (state->input_len > MAX_INPUT_CELLS){
+        printf("number of inputs exceeds maximum number of allowed input cells: (%zu>%d)\n", state->input_len, MAX_INPUT_CELLS);
         return -1;
     }
 
     /* clamp program values if values are out of bounds */
-    for (size_t i=0; i<=(io->prog_len-1); i++){
-        clamp_int64_to_MAXINT(io->prog_tape[i], &overflow_flag);    // omit return value, only care about detecting overflow, not correcting it
+    for (size_t i=0; i<=(state->prog_len-1); i++){
+        clamp_int64_to_MAXINT(state->prog_tape[i], &overflow_flag);    // omit return value, only care about detecting overflow, not correcting it
         if(overflow_flag == 1){
             state->halt = HALT_FAILURE_OVERFLOW;
             break;
@@ -22,24 +22,24 @@ HaltReason vm_run(VMState* state, const VMInput* io){
     }
 
     while (state->halt == HALT_RUNNING){
-        vm_fetch_execute(state, io, &overflow_flag);
+        vm_fetch_execute(state, &overflow_flag);
     }
 
 
     return state->halt;
 }
 
-HaltReason vm_step(VMState* state, const VMInput* io){
+HaltReason vm_step(VMState* state){
     uint8_t overflow_flag = 0;
 
-    if (io->input_len > MAX_INPUT_CELLS){
-        printf("number of inputs exceeds maximum number of allowed input cells: (%zu>%d)\n", io->input_len, MAX_INPUT_CELLS);
+    if (state->input_len > MAX_INPUT_CELLS){
+        printf("number of inputs exceeds maximum number of allowed input cells: (%zu>%d)\n", state->input_len, MAX_INPUT_CELLS);
         return -1;
     }
 
     /* clamp program values if values are out of bounds */
-    for (size_t i=0; i<=(io->prog_len-1); i++){
-        clamp_int64_to_MAXINT(io->prog_tape[i], &overflow_flag);    // omit return value, only care about detecting overflow, not correcting it
+    for (size_t i=0; i<=(state->prog_len-1); i++){
+        clamp_int64_to_MAXINT(state->prog_tape[i], &overflow_flag);    // omit return value, only care about detecting overflow, not correcting it
         if(overflow_flag == 1){
             state->halt = HALT_FAILURE_OVERFLOW;
             break;
@@ -47,14 +47,14 @@ HaltReason vm_step(VMState* state, const VMInput* io){
     }
 
     if (state->halt == HALT_RUNNING){
-        vm_fetch_execute(state, io, &overflow_flag);
+        vm_fetch_execute(state, &overflow_flag);
     }
 
 
     return state->halt;
 }
 
-void vm_fetch_execute(VMState* state, const VMInput* io, uint8_t* overflow_flag){
+void vm_fetch_execute(VMState* state, uint8_t* overflow_flag){
     int64_t tmp;
     Word mem_requested;
     VerifiedInsn insn;
@@ -64,7 +64,7 @@ void vm_fetch_execute(VMState* state, const VMInput* io, uint8_t* overflow_flag)
         state->halt = HALT_FAILURE_TIME;
         return ;
     }
-    state->ver_res=verify_insn(io->prog_tape, io->prog_len, io->input_len, state->pc, state->min_mem_addr, state->max_mem_addr, &insn);
+    state->ver_res=verify_insn(state->prog_tape, state->prog_len, state->input_len, state->pc, state->min_mem_addr, state->max_mem_addr, &insn);
     if (state->ver_res != VERIFY_SUCCESS){     // instruction verification
         state->halt = HALT_FAILURE_VERIFY;
         return ;
@@ -114,7 +114,7 @@ void vm_fetch_execute(VMState* state, const VMInput* io, uint8_t* overflow_flag)
 
         case INS_GET_INPUT:
 
-            tmp = (int64_t)io->input_tape[insn.args[0]];
+            tmp = (int64_t)state->input_tape[insn.args[0]];
             state->work_tape[insn.args[1]] = clamp_int64_to_MAXINT(tmp, overflow_flag);       // should not happen, ensure beforehand that input tape values are in valid range
             state->pc += insn.arity+1;
             

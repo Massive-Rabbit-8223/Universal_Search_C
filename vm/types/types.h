@@ -108,18 +108,16 @@ typedef struct {
     size_t min_mem_addr;
     size_t max_mem_addr;
     Word* output_tape;
-    size_t output_len;
+    size_t output_len;      // current number of output values
     size_t pc;
     int runtime;
     HaltReason halt;
     VerifyResult ver_res;
-} VMState;
-
-typedef struct {
     const Word* prog_tape;
     size_t prog_len;
     const Word* input_tape;
-    size_t input_len;
-} VMInput;
+    size_t input_len;       // number of valid input values
+} VMState;
+
 
 #endif
