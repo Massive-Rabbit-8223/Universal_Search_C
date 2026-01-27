@@ -38,3 +38,21 @@ void print_prog_state(const Word* tape, size_t tape_len, size_t pc){
     }
     printf("]\n");
 }
+
+void print_VMState(const VMState* state){
+
+    printf("halt reason: %d\n", state->halt);
+    printf("verfication result: %d\n", state->ver_res);
+
+    printf("input: ");
+    print_tape(state->input_tape, state->input_len);
+
+    printf("program: ");
+    print_prog_state(state->prog_tape, state->prog_len, state->pc);
+
+    printf("work: ");
+    print_tape(state->work_tape, state->max_mem_addr+1);
+
+    printf("output: ");
+    print_tape(state->output_tape, state->output_len);
+}

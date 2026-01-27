@@ -5,7 +5,7 @@ OBJECTS := ${VM_OBJECTS} ${MAIN_OBJECT}
 
 
 out: ${OBJECTS}
-	gcc ${OBJECTS} -o prog.out
+	gcc ${OBJECTS} -o prog.out -ljansson
 
 ${OBJECTS}: %.o: %.c
 	gcc -c $^ -o $@ -Wall

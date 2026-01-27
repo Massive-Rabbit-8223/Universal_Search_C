@@ -1,12 +1,17 @@
 #include "vm/vm_core/vm_core.h"
 #include "vm/vm_utils/vm_utils.h"
+#include <jansson.h>
 
  
 /* TODO:
 
-- Create print VMState function
+- Create save VMState function (Save as struct or JSON???) -> put in vm_utils
 
-- Create save VMState function (Save as struct or JSON???)
+- Create read VMState function
+
+- Add version number and format string
+
+- Write evaluation function which compares VM output to target ouput.
 
 - Write unit tests, write program tape, and expected output tape, 
 if after running the program tape the ouput tape matches the expected ouput tape, then, success
@@ -16,7 +21,7 @@ when one has finished, remove. After steps are exceuted for current iteration, c
 
 */
 
-
+int save_VMState_to_json(VMState* state, const char* file_path, size_t format_flag);
 
 int main(){
     /* The program tape is read/execute, the work tape is read/write/execute */
@@ -37,7 +42,7 @@ int main(){
     Word input_tape[MAX_INPUT_CELLS];    // filled before program execution
     input_tape[0] = 1;
     input_tape[1] = 3;                 
-    Word output_tape[MAX_OUTPUT_CELLS];  // sequential output                
+    Word output_tape[MAX_OUTPUT_CELLS] = {0};  // sequential output                
 
 
     VMState state = {
@@ -55,24 +60,58 @@ int main(){
         .input_len = 2
     };
 
-    HaltReason r;
-    r = vm_run(&state);
+    vm_run(&state);
 
-    printf("halt reason: %d\n", r);
-    printf("verfication result: %d\n", state.ver_res);
+    print_VMState(&state);
 
-    printf("input: ");
-    print_tape(state.input_tape, state.input_len);
-
-    printf("program: ");
-    print_prog_state(state.prog_tape, state.prog_len, state.pc);
-
-    printf("work: ");
-    print_tape(state.work_tape, state.max_mem_addr+1);
-
-    printf("output: ");
-    print_tape(state.output_tape, state.output_len);
-
+    save_VMState_to_json(&state, "test.json", 4);
 
     return 0;
+}
+
+int save_VMState_to_json(VMState* state, const char* file_path, size_t format_flag){
+    json_t *obj = json_object();
+    json_t *work_arr = json_array();
+    json_t *out_arr = json_array();
+    json_t *prog_arr = json_array();
+    json_t *in_arr = json_array();
+
+    for(int i=0; i < MAX_WORK_CELLS; i++){
+        json_array_insert_new(work_arr, i, json_integer(state->work_tape[i]));
+    }
+    json_object_set_new(obj, "work_tape", work_arr);
+
+    json_object_set_new(obj, "min_mem_addr", json_integer(state->min_mem_addr));
+    json_object_set_new(obj, "max_mem_addr", json_integer(state->max_mem_addr));
+
+    for(int i=0; i < MAX_OUTPUT_CELLS; i++){
+        json_array_insert_new(out_arr, i, json_integer(state->output_tape[i]));
+    }
+    json_object_set_new(obj, "output_tape", out_arr);
+
+    json_object_set_new(obj, "output_len", json_integer(state->output_len));
+    json_object_set_new(obj, "pc", json_integer(state->pc));
+    json_object_set_new(obj, "runtime", json_integer(state->runtime));
+    json_object_set_new(obj, "halt", json_integer(state->halt));
+    json_object_set_new(obj, "ver_res", json_integer(state->ver_res));
+
+    for(int i=0; i < state->prog_len; i++){
+        json_array_insert_new(prog_arr, i, json_integer(state->prog_tape[i]));
+    }
+    json_object_set_new(obj, "prog_tape", prog_arr);
+
+    json_object_set_new(obj, "prog_len", json_integer(state->prog_len));
+
+    for(int i=0; i < MAX_INPUT_CELLS; i++){
+        json_array_insert_new(in_arr, i, json_integer(state->input_tape[i]));
+    }
+    json_object_set_new(obj, "input_tape", in_arr);
+
+    json_object_set_new(obj, "input_len", json_integer(state->input_len));
+
+
+    int status = json_dump_file(obj, file_path, format_flag); 
+    json_decref(obj);
+
+    return status;
 }
