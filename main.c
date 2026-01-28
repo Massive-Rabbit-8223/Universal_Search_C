@@ -1,17 +1,9 @@
 #include "vm/vm_core/vm_core.h"
 #include "vm/vm_utils/vm_utils.h"
-#include <jansson.h>
+
 
  
 /* TODO:
-
-- Create save VMState function (Save as struct or JSON???) -> put in vm_utils
-
-- Create read VMState function
-
-- Add version number and format string
-
-- Write evaluation function which compares VM output to target ouput.
 
 - Write unit tests, write program tape, and expected output tape, 
 if after running the program tape the ouput tape matches the expected ouput tape, then, success
@@ -21,7 +13,7 @@ when one has finished, remove. After steps are exceuted for current iteration, c
 
 */
 
-int save_VMState_to_json(VMState* state, const char* file_path, size_t format_flag);
+
 
 int main(){
     /* The program tape is read/execute, the work tape is read/write/execute */
@@ -42,7 +34,11 @@ int main(){
     Word input_tape[MAX_INPUT_CELLS];    // filled before program execution
     input_tape[0] = 1;
     input_tape[1] = 3;                 
-    Word output_tape[MAX_OUTPUT_CELLS] = {0};  // sequential output                
+    Word output_tape[MAX_OUTPUT_CELLS] = {0};  // sequential output       
+    
+    Word target_output[] = {1, 3};
+    size_t target_output_len = 2;
+    int strict = 0;
 
 
     VMState state = {
@@ -57,61 +53,41 @@ int main(){
         .prog_tape = prog_tape,
         .prog_len = 17,
         .input_tape = input_tape,
-        .input_len = 2
+        .input_len = 2,
+        .version = VM_VERSION,
+        .format = "vm_state"
     };
 
-    vm_run(&state);
+    //vm_run(&state);
+    vm_step(&state);
+    vm_step(&state);
+    vm_step(&state);
 
     print_VMState(&state);
 
     save_VMState_to_json(&state, "test.json", 4);
 
+    VMState state_new;
+    
+    load_VMState_from_json(&state_new, "test.json", 0);
+    printf("\n--- VMState Loaded ---\n");
+    print_VMState(&state_new);
+    printf("\n--- Continue Execution ---\n");
+    vm_run(&state_new);
+    printf("\n--- Execution Finished ---\n");
+    print_VMState(&state_new);
+
+    int success = eval_output(target_output, state_new.output_tape, target_output_len, state_new.output_len, strict);
+
+    if (success == 1){
+        printf("Output match detected!\n");
+    }
+    else{
+        printf("Output do not match!\n");
+    }
+    
+
     return 0;
 }
 
-int save_VMState_to_json(VMState* state, const char* file_path, size_t format_flag){
-    json_t *obj = json_object();
-    json_t *work_arr = json_array();
-    json_t *out_arr = json_array();
-    json_t *prog_arr = json_array();
-    json_t *in_arr = json_array();
 
-    for(int i=0; i < MAX_WORK_CELLS; i++){
-        json_array_insert_new(work_arr, i, json_integer(state->work_tape[i]));
-    }
-    json_object_set_new(obj, "work_tape", work_arr);
-
-    json_object_set_new(obj, "min_mem_addr", json_integer(state->min_mem_addr));
-    json_object_set_new(obj, "max_mem_addr", json_integer(state->max_mem_addr));
-
-    for(int i=0; i < MAX_OUTPUT_CELLS; i++){
-        json_array_insert_new(out_arr, i, json_integer(state->output_tape[i]));
-    }
-    json_object_set_new(obj, "output_tape", out_arr);
-
-    json_object_set_new(obj, "output_len", json_integer(state->output_len));
-    json_object_set_new(obj, "pc", json_integer(state->pc));
-    json_object_set_new(obj, "runtime", json_integer(state->runtime));
-    json_object_set_new(obj, "halt", json_integer(state->halt));
-    json_object_set_new(obj, "ver_res", json_integer(state->ver_res));
-
-    for(int i=0; i < state->prog_len; i++){
-        json_array_insert_new(prog_arr, i, json_integer(state->prog_tape[i]));
-    }
-    json_object_set_new(obj, "prog_tape", prog_arr);
-
-    json_object_set_new(obj, "prog_len", json_integer(state->prog_len));
-
-    for(int i=0; i < MAX_INPUT_CELLS; i++){
-        json_array_insert_new(in_arr, i, json_integer(state->input_tape[i]));
-    }
-    json_object_set_new(obj, "input_tape", in_arr);
-
-    json_object_set_new(obj, "input_len", json_integer(state->input_len));
-
-
-    int status = json_dump_file(obj, file_path, format_flag); 
-    json_decref(obj);
-
-    return status;
-}

@@ -15,6 +15,8 @@
 #define MAX_INPUT_CELLS 256
 #define MAX_OUTPUT_CELLS 256
 
+#define VM_VERSION 1
+
 enum {
     INS_JUMPLEQ,        //No. Args: 3,	If Value in Address 1 <= Value in Address 2, Jump to Address 3
     INS_OUTPUT,         //No. Args: 1,	Write the contents of Address 1 to output
@@ -117,6 +119,8 @@ typedef struct {
     size_t prog_len;
     const Word* input_tape;
     size_t input_len;       // number of valid input values
+    int version;
+    const char* format;
 } VMState;
 
 
