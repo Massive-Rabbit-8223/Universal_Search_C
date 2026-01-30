@@ -5,13 +5,20 @@
  
 /* TODO:
 
+
+- create tests folder inside vm folder with tests.c and tests.h file
+
 - Write unit tests, write program tape, and expected output tape, 
 if after running the program tape the ouput tape matches the expected ouput tape, then, success
+
+- Start documenting code!!!
 
 - Use circular linked list to store all VMs currently under execution. When a new VM is spawned, insert,
 when one has finished, remove. After steps are exceuted for current iteration, continue execution of next element in list
 
+- implement instruction fusion
 */
+
 
 
 
@@ -28,37 +35,24 @@ int main(){
         INS_OUTPUT, 2,
         INS_STOP
     };  
-    
-
-    /* output tape, input tape + input_len are provided externally */
-    Word input_tape[MAX_INPUT_CELLS];    // filled before program execution
-    input_tape[0] = 1;
-    input_tape[1] = 3;                 
-    Word output_tape[MAX_OUTPUT_CELLS] = {0};  // sequential output       
+    size_t prog_len = 17;
+    Word input_tape[] = {1, 3};
+    size_t input_len = 2;
+    int id = 0;  
     
     Word target_output[] = {1, 3};
     size_t target_output_len = 2;
     int strict = 0;
 
 
-    VMState state = {
-        .work_tape = {0},
-        .min_mem_addr = 0,
-        .max_mem_addr = INIT_WORK_CELLS-1,
-        .output_tape = output_tape,
-        .output_len = 0,
-        .pc = 0,
-        .runtime = 0,
-        .halt = HALT_RUNNING,
-        .prog_tape = prog_tape,
-        .prog_len = 17,
-        .input_tape = input_tape,
-        .input_len = 2,
-        .version = VM_VERSION,
-        .format = "vm_state"
-    };
 
-    //vm_run(&state);
+    VMState state;
+    if (!vm_init(&state, prog_tape, prog_len, input_tape, input_len, id)){
+        printf("VM initialization failed, aborting execution!");
+        return -1;
+    }
+
+
     vm_step(&state);
     vm_step(&state);
     vm_step(&state);
@@ -70,6 +64,8 @@ int main(){
     VMState state_new;
     
     load_VMState_from_json(&state_new, "test.json", 0);
+
+    
     printf("\n--- VMState Loaded ---\n");
     print_VMState(&state_new);
     printf("\n--- Continue Execution ---\n");
@@ -85,9 +81,9 @@ int main(){
     else{
         printf("Output do not match!\n");
     }
+
+    save_VMState_to_json(&state_new, "test2.json", 4);
     
 
     return 0;
 }
-
-

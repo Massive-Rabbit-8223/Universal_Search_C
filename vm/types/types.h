@@ -14,6 +14,7 @@
 
 #define MAX_INPUT_CELLS 256
 #define MAX_OUTPUT_CELLS 256
+#define MAX_PROG_CELLS 1024
 
 #define VM_VERSION 1
 
@@ -109,18 +110,19 @@ typedef struct {
     Word work_tape[MAX_WORK_CELLS];
     size_t min_mem_addr;
     size_t max_mem_addr;
-    Word* output_tape;
+    Word output_tape[MAX_OUTPUT_CELLS];
     size_t output_len;      // current number of output values
     size_t pc;
     int runtime;
     HaltReason halt;
     VerifyResult ver_res;
-    const Word* prog_tape;
+    Word prog_tape[MAX_PROG_CELLS];
     size_t prog_len;
-    const Word* input_tape;
+    Word input_tape[MAX_INPUT_CELLS];
     size_t input_len;       // number of valid input values
     int version;
     const char* format;
+    int id;
 } VMState;
 
 
